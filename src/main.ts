@@ -15,6 +15,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const config = app.get(ConfigService);
     const port = config.get<number>('APPLICATION_PORT') ?? 3000;
+    const host = config.get<string>('ALLOWED_HOST') ?? 'localhost';
     app.setGlobalPrefix('api');
     const openApiConfig = new DocumentBuilder()
         .setTitle('LogiX API')
@@ -58,7 +59,7 @@ async function bootstrap() {
     app.use(cookieParser(config.get<string>('COOKIES_SECRET')));
     app.useGlobalFilters(new PrismaExceptionFilter());
 
-    await app.listen(port, () => {
+    await app.listen(port, host, () => {
         console.log(`Server started on port: ${port}`);
         console.log(`http://localhost:${port}/openapi`);
     });
