@@ -1,0 +1,95 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  role             UserRoles @default(client)
+  passwordHash     String    @map("password_hash")
+  refreshTokenHash String?   @map("refresh_token_hash")
+  avatarUrl        String?   @map("avatar_url")
+
+  profile      Profile?
+  clientOrders Order[]  @relation("ClientOrders")
+  driverOrders Order[]  @relation("DriverOrders")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Profile {
+  id          String @id @default(cuid())
+  firstName   String @map("first_name")
+  lastName    String @map("last_name")
+  phoneNumber String @map("phone_number")
+
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Vehicle {
+  id          String        @id @default(cuid())
+  type        VehicleType
+  plateNumber String        @unique @map("plate_number")
+  status      VehicleStatus @default(available)
+
+  orders Order[]
+
+  @@map("vehicles")
+}
+
+model Order {
+  id String @id @default(cuid())
+
+  status    OrderStatus @default(created)
+  price     Int
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  clientId String @map("client_id")
+  client   User   @relation("ClientOrders", fields: [clientId], references: [id], onDelete: Cascade)
+
+  driverId String? @map("driver_id")
+  driver   User?   @relation("DriverOrders", fields: [driverId], references: [id], onDelete: SetNull)
+
+  vehicleId String?  @map("vehicle_id")
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@map("orders")
+}
+
+enum VehicleType {
+  excavator
+  truck
+}
+
+enum VehicleStatus {
+  available
+  in_use
+  repair
+}
+
+enum OrderStatus {
+  created
+  in_progress
+  completed
+  cancelled
+}
+
+enum UserRoles {
+  client
+  driver
+  manager
+  admin
+}
